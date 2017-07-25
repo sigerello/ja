@@ -15,10 +15,11 @@ Gem::Specification.new do |s|
     f.match(%r{^(test|spec|features)/})
   end
   s.require_paths = ["lib"]
+  s.required_ruby_version = ">= 2.4"
+
   s.add_development_dependency "bundler", "~> 1.15"
   s.add_development_dependency "rake", "~> 10.0"
   s.add_development_dependency "rspec", "~> 3.0"
-  s.add_dependency "actionpack", "~> 5.1"
-  s.add_dependency "activerecord", "~> 5.1"
-  s.add_dependency "activesupport", "~> 5.1"
+
+  s.add_dependency "rails", "~> 5.1"
 end

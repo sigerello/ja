@@ -1,13 +1,20 @@
-require "active_support"
+require "active_support/concern"
 
-module Ja::Model
-  extend ActiveSupport::Concern
+module Ja
+  module Model
+    extend ActiveSupport::Concern
 
-  included do
-    class_exec do
-      def to_ja_hash options
-        $stderr.puts "to_ja_hash called"
+    class_methods do
+
+      def ja_type
+        self.to_s.demodulize.tableize
       end
+
+      def ja_pk
+        :id
+      end
+
     end
+
   end
 end
