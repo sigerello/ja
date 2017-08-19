@@ -10,11 +10,11 @@ module Ja
         # TODO: consider using controller_name
 
         def ja_resource_class
-          params[:controller].classify.constantize
+          controller_name.singularize.classify.constantize
         end
 
         def ja_resource_pk_param
-          "#{params[:controller].singularize}_pk".to_sym
+          "#{controller_name.singularize}_pk".to_sym
         end
 
         def ja_resource_scope

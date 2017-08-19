@@ -5,7 +5,7 @@ module Ja
     def ja_resources(*res, &block)
       res.each do |r|
 
-        # hack - redefine parent param name
+        # Hack: redefine parent_resource param
         if parent_resource
           parent_resource_param = parent_resource.param
           parent_resource.define_singleton_method(:nested_param) do

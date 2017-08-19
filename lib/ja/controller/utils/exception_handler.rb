@@ -13,23 +13,24 @@ module Ja
 
           backtrace_cleaner = request.get_header("action_dispatch.backtrace_cleaner")
           wrapper = Ja::ExceptionWrapper.new(backtrace_cleaner, exception)
+
           status = wrapper.status_code
+          status = 500 unless Rack::Utils::HTTP_STATUS_CODES.keys.include?(status)
 
           wrapper.log_exception
 
-          data = {
-            errors: [{
-              status: wrapper.status_code,
-              title:  Rack::Utils::HTTP_STATUS_CODES.fetch(wrapper.status_code, Rack::Utils::HTTP_STATUS_CODES[500]),
-              details: exception.message, #TODO: don't show details for 500 errors
-            }]
+          error = {
+            status: status,
+            title:  Rack::Utils::HTTP_STATUS_CODES[status],
           }
-          render json: data, status: status
+          error[:detail] = exception.message unless status == 500
+
+          render json: { errors: [error] }, status: status
         end
 
       private
 
-        def ja_rethrow_exception
+        def ja_reraise_exception
           yield
         rescue ActiveRecord::RecordNotFound => e
           raise Ja::Error::RecordNotFound.new e.message

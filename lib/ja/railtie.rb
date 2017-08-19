@@ -1,5 +1,6 @@
 require "rails"
 require "ja/controller/utils/exception_handler"
+require "ja/controller/utils/halt_handler"
 require "ja/routing"
 require "ja/controller"
 require "ja/model"
@@ -17,10 +18,10 @@ module Ja
         app.config.action_dispatch.show_exceptions = true
         app.config.exceptions_app = -> (env) { ActionController::API.action(:ja_render_exception).call(env) }
 
-        # Rethrow exceptions with around_action because we can't rethrow
-        # them in rescue handlers
+        # Reraise exceptions with around_action because
+        # we can't reraise them in rescue handlers
         Ja::Controller::Utils::ExceptionHandler.included do
-          around_action :ja_rethrow_exception
+          around_action :ja_reraise_exception
           rescue_from StandardError, with: :ja_render_exception
         end
 
@@ -33,14 +34,15 @@ module Ja
         end
 
         # Define explicitly because methods from included modules
-        # are not considered as actions
+        # are not considered as actions and can't be exposed as Rack endpoints
         class ActionController::API
           def ja_render_exception exception=nil
             super
           end
         end
 
-        # Replace default html FAILSAFE_RESPONSE with json one
+        # Replace default HTML-format FAILSAFE_RESPONSE with JSON-format one
+        # TODO: consider to use application/vnd.api+json media type to comply with JSON-API standard
         ActionDispatch::ShowExceptions::FAILSAFE_RESPONSE.replace [500, { "Content-Type" => "application/json" }, ['{"errors":[{"status":500,"title":"Internal Server Error"}]}']]
       end
     end
@@ -48,14 +50,14 @@ module Ja
     initializer "ja.include_mixins" do |app|
       ActionDispatch::Routing::Mapper.send :include, Ja::Routing
 
-      # Include to both ActionController::API and ActionController::Base classes
+      # Include to both ActionController::API and ActionController::Base
       # because we don't know which one user will use as base class for his controllers
       ActiveSupport.on_load(:action_controller) do
-        ActionController::API.send :include, Ja::Controller
-        ActionController::API.send :include, Ja::Controller::Utils::ExceptionHandler
-
-        ActionController::Base.send :include, Ja::Controller
-        ActionController::Base.send :include, Ja::Controller::Utils::ExceptionHandler
+        [ActionController::API, ActionController::Base].each do |klass|
+          klass.send :include, Ja::Controller
+          klass.send :include, Ja::Controller::Utils::ExceptionHandler
+          klass.send :include, Ja::Controller::Utils::HaltHandler
+        end
       end
 
       ActiveSupport.on_load(:active_record) do

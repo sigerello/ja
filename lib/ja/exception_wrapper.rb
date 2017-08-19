@@ -33,7 +33,7 @@ module Ja
 
       Rails.logger.fatal "  "
       @exceptions_stack.reverse.each_with_index do |e, i|
-        prefix = e == @exception ? "**" : "*"
+        prefix = "*" * (i+1)
         Rails.logger.fatal "#{prefix} #{e.class} (#{e.message})"
       end
       Rails.logger.fatal @exception.annoted_source_code.join("\n") if @exception.respond_to?(:annoted_source_code)
