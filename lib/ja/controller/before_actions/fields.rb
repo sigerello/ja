@@ -12,9 +12,13 @@ module Ja
 
       private
 
+        def ja_fields
+          ja_resource_class.ja_fields
+        end
+
         def ja_set_fields
-          # TODO: implement
-          # _debug "before_action: check fields params"
+          params_fields = params[:fields].split(",") rescue []
+          @ja_fields = params_fields.size > 0 ? params_fields : ja_fields
         end
 
       end

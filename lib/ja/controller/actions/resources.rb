@@ -13,11 +13,13 @@ module Ja
 
         def index
           @ja_resources_collection = ja_resource_scope.limit(10)
-          ja_render_data data: @ja_resources_collection
+          options = { fields: @ja_fields }
+          ja_render_data data: @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
         end
 
         def show
-          ja_render_data data: @ja_resource
+          options = { fields: @ja_fields }
+          ja_render_data data: @ja_resource.ja_resource_object(options)
         end
 
         def create
