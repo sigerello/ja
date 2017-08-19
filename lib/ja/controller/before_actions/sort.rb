@@ -12,9 +12,16 @@ module Ja
 
       private
 
+        def ja_sort
+          ja_resource_class.ja_sort
+        end
+
         def ja_set_sort
-          # TODO: implement
-          # _debug "before_action: check sort params"
+          params_sort = params[:sort].split(",") rescue []
+          params_sort.map! { |s| s.starts_with?("-") ? { s[1..-1] => :desc } : { s => :asc } }
+          params_sort.reject!{ |rec| !ja_resource_class.column_names.include?(rec.keys[0]) }
+          params_sort.map!{ |rec| rec.symbolize_keys }
+          @ja_sort = params_sort.size > 0 ? params_sort : ja_sort
         end
 
       end

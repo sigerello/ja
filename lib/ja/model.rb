@@ -17,6 +17,10 @@ module Ja
         # TODO: remove relationship attributes
         self.column_names.map(&:to_sym) - [:id, :password_digest]
       end
+
+      def ja_sort
+        [{ :created_at => :desc }]
+      end
     end
 
     def ja_resource_object options={}

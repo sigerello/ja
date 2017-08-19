@@ -12,7 +12,7 @@ module Ja
         end
 
         def index
-          @ja_resources_collection = ja_resource_scope.limit(10)
+          @ja_resources_collection = ja_resource_scope.order(@ja_sort).limit(10)
           options = { fields: @ja_fields }
           ja_render_data data: @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
         end
