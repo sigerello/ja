@@ -15,7 +15,7 @@ module Ja
 
       def ja_fields
         # TODO: remove relationship attributes
-        self.column_names.map(&:to_sym) - [:id, :password_digest]
+        self.column_names.map(&:to_sym) - [self.ja_pk, :password_digest]
       end
 
       def ja_sort
@@ -27,14 +27,18 @@ module Ja
       res = {}
       res[:id] = self[self.class.ja_pk]
       res[:type] = self.class.ja_type
-
-      fields = self.class.ja_fields
-      fields = options[:fields] if options[:fields].is_a?(Array)
-      fields.map!(&:to_s)
-
-      # TODO: allow virtual attributes
-      res[:attributes] = self.attributes.slice(*fields).symbolize_keys
+      res[:attributes] = ja_build_resource_object_attributes options[:fields]
       res
+    end
+
+  private
+
+    def ja_build_resource_object_attributes params_fields
+      fields = self.class.ja_fields
+      fields = params_fields if params_fields.is_a?(Array)
+      fields.delete_if{ |m| !self.respond_to?(m) }
+      methods = fields - self.class.column_names
+      self.as_json(only: fields, methods: methods).symbolize_keys
     end
 
   end
