@@ -7,36 +7,39 @@ module Ja
         extend ActiveSupport::Concern
 
         included do
-          around_action :ja_catch_halt
+          around_action :catch_halt
         end
 
       private
 
-        def ja_catch_halt
-          data = catch :halt do
-            yield and return
+        def catch_halt
+          status, data = catch :halt do
+            yield
+            return
           end
-          ja_render_halted data
+          render json: data, status: status
         end
 
-        def halt data
-          throw :halt, data
+        def halt(data)
+          throw :halt, format_halted_success(data)
         end
 
-        def ja_render_halted data
-          status = data[:status].to_i
+        def halt!(data)
+          throw :halt, format_halted_error(data)
+        end
+
+        def format_halted_success(data)
+          status = data.delete(:status).to_i
+          status = 200 unless Rack::Utils::HTTP_STATUS_CODES.keys.include?(status)
+          [status, data]
+        end
+
+        def format_halted_error(data={})
+          status = data.delete(:status).to_i
           status = 500 unless Rack::Utils::HTTP_STATUS_CODES.keys.include?(status)
-          if data[:errors] && data[:errors].is_a?(Array)
-            result = { errors: data[:errors] }
-          else
-            error = {
-              status: status,
-              title:  Rack::Utils::HTTP_STATUS_CODES[status],
-            }
-            error[:detail] = data[:detail] if data[:detail]
-            result = { errors: [error] }
-          end
-          render json: result, status: status
+          data[:title] ||= Rack::Utils::HTTP_STATUS_CODES[status]
+          data = { errors: [data] } unless data[:errors]
+          [status, data]
         end
 
       end

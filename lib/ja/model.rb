@@ -23,17 +23,29 @@ module Ja
       end
     end
 
-    def ja_resource_object options={}
+    def ja_resource_object(options={})
       res = {}
       res[:id] = self[self.class.ja_pk]
       res[:type] = self.class.ja_type
-      res[:attributes] = ja_build_resource_object_attributes options[:fields]
+      res[:attributes] = ja_build_resource_object_attributes(options[:fields])
       res
+    end
+
+    def ja_error_objects(options = {})
+      options.reverse_merge!(pointer_path: "/data/attributes/")
+      self.errors.as_json(full_messages: true).map do |field, errors|
+        errors.map do |error|
+          {
+            detail: error,
+            source: { pointer: "#{options[:pointer_path]}#{field}" }
+          }
+        end
+      end.flatten
     end
 
   private
 
-    def ja_build_resource_object_attributes params_fields
+    def ja_build_resource_object_attributes(params_fields = nil)
       fields = self.class.ja_fields
       fields = params_fields if params_fields.is_a?(Array)
       fields.delete_if{ |m| !self.respond_to?(m) }
