@@ -12,7 +12,9 @@ module Ja
         end
 
         def index
-          @ja_resources_collection = ja_resource_scope.order(@ja_sort).limit(10)
+          @ja_resources_collection = ja_resource_scope
+          @ja_resources_collection = ja_apply_sort(@ja_resources_collection, @ja_sort)
+          @ja_resources_collection = ja_apply_pagination(@ja_resources_collection, @ja_pagination)
           options = { fields: @ja_fields }
           ja_render_data data: @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
         end
@@ -37,7 +39,15 @@ module Ja
       private
 
         def ja_find_resource
-          @ja_resource = ja_resource_scope.where(ja_resource_class.ja_pk => params[ja_resource_pk_param]).first!
+          @ja_resource = ja_resource_scope.find_by!(ja_resource_class.ja_pk => params[ja_resource_pk_param])
+        end
+
+        def ja_apply_sort(collection, v)
+          collection.order(v)
+        end
+
+        def ja_apply_pagination(collection, v)
+          collection.paginate(v)
         end
 
       end

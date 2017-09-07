@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec", "~> 3.0"
 
   s.add_dependency "rails", "~> 5.1"
+  s.add_dependency "will_paginate", "~> 3.1.6"
 end

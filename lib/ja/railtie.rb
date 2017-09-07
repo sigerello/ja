@@ -1,4 +1,5 @@
 require "rails"
+require "will_paginate"
 require "ja/controller/utils/exception_handler"
 require "ja/controller/utils/halt_handler"
 require "ja/routing"
