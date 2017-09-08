@@ -5,6 +5,7 @@ require "ja/controller/utils/halt_handler"
 require "ja/routing"
 require "ja/controller"
 require "ja/model"
+require "ja/error"
 
 module Ja
   class Railtie < Rails::Railtie

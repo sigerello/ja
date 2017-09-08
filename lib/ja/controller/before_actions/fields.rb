@@ -13,12 +13,41 @@ module Ja
       private
 
         def ja_fields
-          ja_resource_class.ja_fields
+          [ja_resource_class, *ja_resource_class.ja_relationships.map{ |r| r[:klass] }].inject({}) do |h, klass|
+            h[klass.ja_type] = klass.ja_fields
+            h
+          end
+        end
+
+        def ja_restricted_fields
+          [ja_resource_class, *ja_resource_class.ja_relationships.map{ |r| r[:klass] }].inject({}) do |h, klass|
+            h[klass.ja_type] = klass.ja_restricted_fields
+            h
+          end
         end
 
         def ja_set_fields
-          params_fields = params[:fields].split(",") rescue []
-          @ja_fields = params_fields.size > 0 ? params_fields : ja_fields
+          @ja_fields = {}
+
+          controller_fields = ja_fields
+          controller_restricted_fields = ja_restricted_fields
+
+          [ja_resource_class, *ja_resource_class.ja_relationships.map{ |r| r[:klass] }].each do |klass|
+            fields = params[:fields][klass.ja_type].split(",") rescue []
+            fields = controller_fields[klass.ja_type] unless fields.size > 0
+            fields = klass.ja_fields unless fields.is_a?(Array)
+
+            restricted_fields = controller_restricted_fields[klass.ja_type]
+            restricted_fields = klass.ja_restricted_fields unless restricted_fields.is_a?(Array)
+
+            inst = klass.new
+            fields.delete_if{ |m| !inst.respond_to?(m) }
+            restricted_fields.delete_if{ |m| !inst.respond_to?(m) }
+
+            fields = fields.map(&:to_sym) - restricted_fields.map(&:to_sym) - klass.ja_relationship_names
+
+            @ja_fields[klass.ja_type] = fields
+          end
         end
 
       end

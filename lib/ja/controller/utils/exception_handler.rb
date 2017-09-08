@@ -1,6 +1,5 @@
 require "active_support/concern"
 require "ja/exception_wrapper"
-require "ja/error/record_not_found"
 
 module Ja
   module Controller

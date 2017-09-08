@@ -15,25 +15,42 @@ module Ja
           @ja_resources_collection = ja_resource_scope
           @ja_resources_collection = ja_apply_sort(@ja_resources_collection, @ja_sort)
           @ja_resources_collection = ja_apply_pagination(@ja_resources_collection, @ja_pagination)
-          options = { fields: @ja_fields }
-          ja_render_data data: @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
+          options = { fields: @ja_fields, include: @ja_include }
+
+          # TODO: make sure there is no duplicates in response
+          # self.ja_resources_map << self.ja_resource_uid unless self.ja_resources_map.include?(self.ja_resource_uid)
+
+          result = {}
+          result[:data] = @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
+          result[:included] = @ja_resources_collection.map{ |rec| rec.ja_included_resource_objects(options) }.flatten
+          render status: 200, json: result
         end
 
         def show
-          options = { fields: @ja_fields }
-          ja_render_data data: @ja_resource.ja_resource_object(options)
+          options = { fields: @ja_fields, include: @ja_include }
+
+          # TODO: make sure there is no duplicates in response
+          # self.ja_resources_map << self.ja_resource_uid unless self.ja_resources_map.include?(self.ja_resource_uid)
+
+          result = {}
+          result[:data] = @ja_resource.ja_resource_object(options)
+          result[:included] = @ja_resource.ja_included_resource_objects(options)
+          render status: 200, json: result
         end
 
         def create
-          ja_render_params
+          # TODO: implement
+          render status: 200, json: params
         end
 
         def update
-          ja_render_params
+          # TODO: implement
+          render status: 200, json: params
         end
 
         def destroy
-          ja_render_params
+          # TODO: implement
+          render status: 200, json: params
         end
 
       private
