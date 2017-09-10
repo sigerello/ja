@@ -21,14 +21,12 @@ module Ja
         end
 
         def ja_resource_scope
-          s = ja_resource_class
-          s = s.preload(ja_resource_class.ja_relationship_names)
-          s
+          ja_resource_class
         end
 
-        def ja_resources_map
-          return @ja_resources_map if defined? @ja_resources_map
-          @ja_resources_map = []
+        def ja_options
+          return @ja_options if defined? @ja_options
+          @ja_options = {}
         end
       end
     end

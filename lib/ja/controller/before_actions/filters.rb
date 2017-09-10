@@ -14,7 +14,6 @@ module Ja
 
         def ja_set_filters
           # TODO: implement
-          # _debug "before_action: check filters params"
         end
 
       end

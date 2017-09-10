@@ -13,28 +13,29 @@ module Ja
 
         def index
           @ja_resources_collection = ja_resource_scope
-          @ja_resources_collection = ja_apply_sort(@ja_resources_collection, @ja_sort)
-          @ja_resources_collection = ja_apply_pagination(@ja_resources_collection, @ja_pagination)
-          options = { fields: @ja_fields, include: @ja_include }
+          @ja_resources_collection = @ja_resources_collection.preload(ja_options[:preload_map])
+          @ja_resources_collection = ja_apply_sort(@ja_resources_collection, ja_options[:sort])
+          @ja_resources_collection = ja_apply_pagination(@ja_resources_collection, ja_options[:pagination])
 
-          # TODO: make sure there is no duplicates in response
-          # self.ja_resources_map << self.ja_resource_uid unless self.ja_resources_map.include?(self.ja_resource_uid)
+          resource_objects = @ja_resources_collection.map{ |rec| rec.ja_resource_object(ja_options) }
+          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resources_collection, ja_options)
+
+          _debug ja_options
 
           result = {}
-          result[:data] = @ja_resources_collection.map{ |rec| rec.ja_resource_object(options) }
-          result[:included] = @ja_resources_collection.map{ |rec| rec.ja_included_resource_objects(options) }.flatten
+          result[:meta] = { total_entries: @ja_resources_collection.total_entries }
+          result[:data] = resource_objects
+          result[:included] = included_resources unless included_resources.blank?
           render status: 200, json: result
         end
 
         def show
-          options = { fields: @ja_fields, include: @ja_include }
-
-          # TODO: make sure there is no duplicates in response
-          # self.ja_resources_map << self.ja_resource_uid unless self.ja_resources_map.include?(self.ja_resource_uid)
+          resource_object = @ja_resource.ja_resource_object(ja_options)
+          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resource, ja_options)
 
           result = {}
-          result[:data] = @ja_resource.ja_resource_object(options)
-          result[:included] = @ja_resource.ja_included_resource_objects(options)
+          result[:data] = resource_object
+          result[:included] = included_resources unless included_resources.blank?
           render status: 200, json: result
         end
 
@@ -56,7 +57,9 @@ module Ja
       private
 
         def ja_find_resource
-          @ja_resource = ja_resource_scope.find_by!(ja_resource_class.ja_pk => params[ja_resource_pk_param])
+          @ja_resource = ja_resource_scope
+          @ja_resource = @ja_resource.preload(ja_options[:preload_map])
+          @ja_resource = @ja_resource.find_by!(ja_resource_class.ja_pk => params[ja_resource_pk_param])
         end
 
         def ja_apply_sort(collection, v)

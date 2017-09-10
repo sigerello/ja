@@ -6,7 +6,8 @@ module Ja
 
     class_methods do
       def ja_type
-        self.to_s.demodulize.tableize.to_sym
+        return @ja_type if defined?(@ja_type)
+        @ja_type = self.to_s.demodulize.tableize.to_sym
       end
 
       def ja_pk
@@ -32,8 +33,8 @@ module Ja
         []
       end
 
+      # TODO: implement sorting by related resources
       def ja_sort
-        # TODO: implement sorting by related resources
         [{ :created_at => :desc }]
       end
 
@@ -44,6 +45,7 @@ module Ja
           type = :to_many if [ActiveRecord::Reflection::HasManyReflection, ActiveRecord::Reflection::HasAndBelongsToManyReflection].include? association.class
 
           next unless type
+          next if association.options[:polymorphic]
 
           rel = {
             type: type,
@@ -52,40 +54,37 @@ module Ja
           }
           rel[:foreign_key] = association.foreign_key.to_sym if type == :to_one
           rel
-        end
+        end.compact
       end
 
       def ja_relationship_names
         self.ja_relationships.map{ |r| r[:name] }
       end
 
-      def ja_check_include!(inst, path)
-        paths = path.split(".")
-        if paths.size == 1
-          # TODO: format proper error response
-          raise Ja::Error::InvalidIncludeParam.new(nil, inst.class, paths[0]) unless inst.respond_to?(paths[0])
-        elsif paths.size > 1
-          self.ja_check_include!(inst, paths[0])
-          inst = inst.class.ja_relationships.select{ |r| r[:name].to_s == paths[0] }[0][:klass].new
-          self.ja_check_include!(inst, paths[1..-1].join("."))
-        end
-      end
-
-      def ja_populate_include!(res, objs, path, options = {})
+      def ja_populate_include!(res, objs, path, options = {}, included_resources_uids_map = [])
         paths = path.split(".")
         [*objs].each do |obj|
           if paths.size == 1
             [*obj.send(paths[0])].each do |rec|
-              # _debug "--> obj #{obj.class}:#{obj.try(:id)} - #{path}"
-              res << rec.ja_resource_object(options)
+              unless included_resources_uids_map.include?(rec.ja_resource_uid)
+                res << rec.ja_resource_object(options)
+                included_resources_uids_map << rec.ja_resource_uid
+              end
             end
           elsif paths.size > 1
-            ja_populate_include!(res, obj, paths[0], options)
+            ja_populate_include!(res, obj, paths[0], options, included_resources_uids_map)
             rel = obj.class.ja_relationships.select{ |r| r[:name].to_s == paths[0] }[0][:name]
             obj = obj.send(rel)
-            ja_populate_include!(res, obj, paths[1..-1].join("."), options)
+            ja_populate_include!(res, obj, paths[1..-1].join("."), options, included_resources_uids_map)
           end
         end
+      end
+
+      def ja_included_resource_objects(objs, options = {})
+        options = options.dup
+        inc = options.delete(:include)
+        included_resources_uids_map = [*objs].map(&:ja_resource_uid)
+        inc.inject([]) { |res, path| self.ja_populate_include!(res, objs, path, options, included_resources_uids_map); res }
       end
 
     end
@@ -108,20 +107,8 @@ module Ja
       res
     end
 
-    # TODO: implement
-    def ja_included_resource_objects(options = {})
-      # _debug options
-      res = []
-      # return nil if options[:skip_include]
-      # inc = options[:include]
-      options = options.dup
-      inc = options.delete(:include)
-      inc.each { |path| self.class.ja_populate_include!(res, self, path, options) }
-      res
-    end
-
     def ja_error_objects(options = {})
-      options.reverse_merge!(pointer_path: "/data/attributes/")
+      options = options.dup.reverse_merge!(pointer_path: "/data/attributes/")
       self.errors.as_json(full_messages: true).map do |field, errors|
         errors.map do |error|
           {
@@ -145,14 +132,16 @@ module Ja
     end
 
     def ja_build_resource_object_relationships(res, options = {})
-      # return res if options[:skip_relationships]
+      included_resource_types = options[:include_map][self.class.ja_type] rescue []
+      return res if included_resource_types.blank?
+
       self.class.ja_relationships.each do |relationship|
+        next unless included_resource_types.include?(relationship[:name])
         if relationship[:type] == :to_one
           res[:relationships] ||= {}
           res[:relationships][relationship[:name]] = {}
           res[:relationships][relationship[:name]][:data] = self.send(relationship[:name]).ja_resource_identifier_object rescue nil
         elsif relationship[:type] == :to_many
-          next unless (options[:include] || []).map{ |path| path.split(".")[0] }.include?(relationship[:name].to_s)
           res[:relationships] ||= {}
           res[:relationships][relationship[:name]] = {}
           res[:relationships][relationship[:name]][:data] = []

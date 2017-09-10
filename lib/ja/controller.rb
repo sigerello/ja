@@ -6,7 +6,6 @@ require "ja/controller/before_actions/filters"
 require "ja/controller/before_actions/include"
 require "ja/controller/before_actions/sort"
 require "ja/controller/before_actions/pagination"
-require "ja/controller/before_actions/links"
 require "ja/controller/actions/resources"
 require "ja/controller/actions/relationships"
 
@@ -24,7 +23,6 @@ module Ja
         include Ja::Controller::BeforeActions::Include
         include Ja::Controller::BeforeActions::Sort
         include Ja::Controller::BeforeActions::Pagination
-        include Ja::Controller::BeforeActions::Links
 
         include Ja::Controller::Actions::Resources
         include Ja::Controller::Actions::Relationships

@@ -26,8 +26,9 @@ module Ja
           end
         end
 
+        # TODO: consider to raise errors when user requests restricted includes
         def ja_set_fields
-          @ja_fields = {}
+          ja_options[:fields] = {}
 
           controller_fields = ja_fields
           controller_restricted_fields = ja_restricted_fields
@@ -40,13 +41,13 @@ module Ja
             restricted_fields = controller_restricted_fields[klass.ja_type]
             restricted_fields = klass.ja_restricted_fields unless restricted_fields.is_a?(Array)
 
-            inst = klass.new
-            fields.delete_if{ |m| !inst.respond_to?(m) }
-            restricted_fields.delete_if{ |m| !inst.respond_to?(m) }
+            obj = klass.new
+            fields.delete_if{ |m| !obj.respond_to?(m) }
+            restricted_fields.delete_if{ |m| !obj.respond_to?(m) }
 
             fields = fields.map(&:to_sym) - restricted_fields.map(&:to_sym) - klass.ja_relationship_names
 
-            @ja_fields[klass.ja_type] = fields
+            ja_options[:fields][klass.ja_type] = fields
           end
         end
 
