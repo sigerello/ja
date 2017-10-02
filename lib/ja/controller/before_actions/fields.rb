@@ -26,7 +26,7 @@ module Ja
           end
         end
 
-        # TODO: consider to raise errors when user requests restricted includes
+        # TODO: consider to raise errors when user requests restricted fields
         def ja_set_fields
           ja_options[:fields] = {}
 
