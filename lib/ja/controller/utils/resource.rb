@@ -24,9 +24,9 @@ module Ja
           ja_resource_class
         end
 
-        def ja_options
-          return @ja_options if defined? @ja_options
-          @ja_options = {}
+        def ja_context
+          return @ja_context if defined? @ja_context
+          @ja_context = {}
         end
       end
     end

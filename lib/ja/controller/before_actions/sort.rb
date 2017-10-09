@@ -22,7 +22,7 @@ module Ja
           params_sort.reject!{ |rec| !ja_resource_class.column_names.include?(rec.keys[0]) }
           params_sort.map!{ |rec| rec.symbolize_keys }
 
-          ja_options[:sort] = params_sort.size > 0 ? params_sort : ja_sort
+          ja_context[:sort] = params_sort.size > 0 ? params_sort : ja_sort
         end
 
       end

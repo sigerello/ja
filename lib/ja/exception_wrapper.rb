@@ -27,6 +27,10 @@ module Ja
       exception
     end
 
+    def status_code
+      @exception.class.try(:status_code) || @exception.try(:status_code) || super
+    end
+
     def log_exception
       trace = self.application_trace
       trace = self.framework_trace if trace.empty?

@@ -13,6 +13,8 @@ module Ja
 
     # Set to false in config/application.rb file to disable error handling
     config.ja.error_handling = true
+    # config.ja.raise_on_invalid_include_params = true
+    # config.ja.raise_on_restricted_include_params = true
 
     initializer "ja.error_handling" do |app|
       if config.ja.error_handling

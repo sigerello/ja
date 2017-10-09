@@ -28,13 +28,13 @@ module Ja
           throw :halt, format_halted_error(data)
         end
 
-        def format_halted_success(data)
+        def format_halted_success(data = {})
           status = data.delete(:status).to_i
           status = 200 unless Rack::Utils::HTTP_STATUS_CODES.keys.include?(status)
           [status, data]
         end
 
-        def format_halted_error(data={})
+        def format_halted_error(data = {})
           status = data.delete(:status).to_i
           status = 500 unless Rack::Utils::HTTP_STATUS_CODES.keys.include?(status)
           data[:title] ||= Rack::Utils::HTTP_STATUS_CODES[status]

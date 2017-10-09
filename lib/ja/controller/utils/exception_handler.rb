@@ -32,7 +32,8 @@ module Ja
         def ja_reraise_exception
           yield
         rescue ActiveRecord::RecordNotFound => e
-          raise Ja::Error::RecordNotFound.new e.message
+          # raise Ja::Error::RecordNotFound.new e.message
+          raise Ja::Error::RecordNotFound.new "Resource not found"
         end
 
         # def ja_recursively_raise(c=0, max=5)

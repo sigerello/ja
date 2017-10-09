@@ -25,7 +25,7 @@ module Ja
           params_page[:page] = ja_pagination[:page] unless params_page[:page] > 0
           params_page[:per_page] = ja_pagination[:per_page] unless params_page[:per_page] > 0
 
-          ja_options[:pagination] = params_page
+          ja_context[:pagination] = params_page
         end
 
       end

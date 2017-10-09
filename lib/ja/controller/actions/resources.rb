@@ -5,7 +5,6 @@ module Ja
     module Actions
       module Resources
         extend ActiveSupport::Concern
-        # TODO: check params (*_pk)
 
         included do
           before_action :ja_find_resource, only: [:show, :update, :destroy]
@@ -17,10 +16,8 @@ module Ja
           @ja_resources_collection = ja_apply_sort(@ja_resources_collection)
           @ja_resources_collection = ja_apply_pagination(@ja_resources_collection)
 
-          resource_objects = @ja_resources_collection.map{ |rec| rec.ja_resource_object(ja_options) }
-          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resources_collection, ja_options)
-
-          # _debug ja_options
+          resource_objects = @ja_resources_collection.map{ |rec| rec.ja_resource_object(ja_context) }
+          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resources_collection, ja_context)
 
           result = {}
           result[:meta] = { total_entries: @ja_resources_collection.total_entries }
@@ -30,8 +27,11 @@ module Ja
         end
 
         def show
-          resource_object = @ja_resource.ja_resource_object(ja_options)
-          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resource, ja_options)
+          resource_object = @ja_resource.ja_resource_object(ja_context)
+          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resource, ja_context)
+
+          # _debug "JA_PRELOAD", ja_resource_class.ja_preload(ja_context)
+          # _debug "JA_INCLUDE_MAP", ja_resource_class.ja_include_map!(ja_context)
 
           result = {}
           result[:data] = resource_object
@@ -63,16 +63,15 @@ module Ja
         end
 
         def ja_apply_preload(scope)
-          # _debug "JA_PRELOAD: ", scope.ja_preload(ja_options)
-          scope.preload(scope.ja_preload(ja_options))
+          scope.preload(scope.ja_preload(ja_context))
         end
 
         def ja_apply_sort(scope)
-          scope.order(ja_options[:sort])
+          scope.order(ja_context[:sort])
         end
 
         def ja_apply_pagination(scope)
-          scope.paginate(ja_options[:pagination])
+          scope.paginate(ja_context[:pagination])
         end
 
       end
