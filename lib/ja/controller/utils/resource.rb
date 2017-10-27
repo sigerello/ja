@@ -16,10 +16,6 @@ module Ja
           "#{controller_name.singularize}_pk".to_sym
         end
 
-        def ja_type
-          ja_resource_class.ja_type
-        end
-
         def ja_resource_scope
           ja_resource_class
         end

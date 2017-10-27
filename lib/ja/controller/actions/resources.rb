@@ -16,42 +16,49 @@ module Ja
           @ja_resources_collection = ja_apply_sort(@ja_resources_collection)
           @ja_resources_collection = ja_apply_pagination(@ja_resources_collection)
 
-          resource_objects = @ja_resources_collection.map{ |rec| rec.ja_resource_object(ja_context) }
-          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resources_collection, ja_context)
-
-          result = {}
-          result[:meta] = { total_entries: @ja_resources_collection.total_entries }
-          result[:data] = resource_objects
-          result[:included] = included_resources unless included_resources.blank?
+          result = ja_result(@ja_resources_collection, ja_context)
           render status: 200, json: result
         end
 
         def show
-          resource_object = @ja_resource.ja_resource_object(ja_context)
-          included_resources = ja_resource_class.ja_included_resource_objects(@ja_resource, ja_context)
-
-          # _debug "JA_PRELOAD", ja_resource_class.ja_preload(ja_context)
-          # _debug "JA_INCLUDE_MAP", ja_resource_class.ja_include_map!(ja_context)
-
-          result = {}
-          result[:data] = resource_object
-          result[:included] = included_resources unless included_resources.blank?
+          result = ja_result(@ja_resource, ja_context)
           render status: 200, json: result
         end
 
         def create
-          # TODO: implement
-          render status: 200, json: params
+          # TODO: check specs
+          # TODO: slice attributes - pass only allowed attributes
+          permitted_params = params.require(:data).permit(:id, :type, attributes: {})
+          @ja_resource = ja_resource_scope.new(permitted_params[:attributes])
+          @ja_resource[ja_resource_class.ja_pk] = permitted_params[:id]
+          ok = @ja_resource.save
+
+          # TODO: check pointer_path
+          halt! status: 422, errors: @ja_resource.ja_error_objects(pointer_path: "") unless ok
+
+          # TODO: check return object
+          result = ja_result(@ja_resource, ja_context)
+          render status: 201, json: result
         end
 
         def update
-          # TODO: implement
-          render status: 200, json: params
+          # TODO: check specs
+          # TODO: slice attributes - pass only allowed attributes
+          permitted_params = params.require(:data).permit(:id, :type, attributes: {})
+          ok = @ja_resource.update(permitted_params[:attributes])
+
+          # TODO: check pointer_path
+          halt! status: 422, errors: @ja_resource.ja_error_objects(pointer_path: "") unless ok
+
+          # TODO: check return object
+          result = ja_result(@ja_resource, ja_context)
+          render status: 200, json: result
         end
 
         def destroy
-          # TODO: implement
-          render status: 200, json: params
+          @ja_resource.destroy
+          result = ja_result(@ja_resource, ja_context)
+          render status: 200, json: result
         end
 
       private
@@ -72,6 +79,26 @@ module Ja
 
         def ja_apply_pagination(scope)
           scope.paginate(ja_context[:pagination])
+        end
+
+        def ja_result(res, context = {})
+          result = {}
+
+          if res.class <= ActiveRecord::Relation || res.class <= Array
+            resource_objects = res.map{ |rec| rec.ja_resource_object(context) }
+            result[:meta] = { total_entries: res.total_entries } if res.respond_to?(:total_entries)
+            result[:data] = resource_objects
+          elsif res.class <= ActiveRecord::Base
+            resource_object = res.ja_resource_object(context)
+            result[:data] = resource_object
+          else
+            return nil
+          end
+
+          included_resources = ja_resource_class.ja_included_resource_objects(res, context)
+          result[:included] = included_resources unless included_resources.blank?
+
+          result
         end
 
       end
