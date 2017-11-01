@@ -7,15 +7,11 @@ module Ja
         extend ActiveSupport::Concern
 
         included do
+          before_action :ja_find_collection, only: [:index]
           before_action :ja_find_resource, only: [:show, :update, :destroy]
         end
 
         def index
-          @ja_resources_collection = ja_resource_scope
-          @ja_resources_collection = ja_apply_preload(@ja_resources_collection)
-          @ja_resources_collection = ja_apply_sort(@ja_resources_collection)
-          @ja_resources_collection = ja_apply_pagination(@ja_resources_collection)
-
           result = ja_result(@ja_resources_collection, ja_context)
           render status: 200, json: result
         end
@@ -28,6 +24,7 @@ module Ja
         def create
           # TODO: check specs
           # TODO: slice attributes - pass only allowed attributes
+          # TODO: generate new id if empty
           permitted_params = params.require(:data).permit(:id, :type, attributes: {})
           @ja_resource = ja_resource_scope.new(permitted_params[:attributes])
           @ja_resource[ja_resource_class.ja_pk] = permitted_params[:id]
@@ -35,8 +32,6 @@ module Ja
 
           # TODO: check pointer_path
           halt! status: 422, errors: @ja_resource.ja_error_objects(pointer_path: "") unless ok
-
-          # TODO: check return object
           result = ja_result(@ja_resource, ja_context)
           render status: 201, json: result
         end
@@ -49,8 +44,6 @@ module Ja
 
           # TODO: check pointer_path
           halt! status: 422, errors: @ja_resource.ja_error_objects(pointer_path: "") unless ok
-
-          # TODO: check return object
           result = ja_result(@ja_resource, ja_context)
           render status: 200, json: result
         end
@@ -62,6 +55,13 @@ module Ja
         end
 
       private
+
+        def ja_find_collection
+          @ja_resources_collection = ja_resource_scope
+          @ja_resources_collection = ja_apply_preload(@ja_resources_collection)
+          @ja_resources_collection = ja_apply_sort(@ja_resources_collection)
+          @ja_resources_collection = ja_apply_pagination(@ja_resources_collection)
+        end
 
         def ja_find_resource
           @ja_resource = ja_resource_scope
@@ -92,6 +92,7 @@ module Ja
             resource_object = res.ja_resource_object(context)
             result[:data] = resource_object
           else
+            # TODO: consider raising an exception
             return nil
           end
 
